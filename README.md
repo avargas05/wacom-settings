@@ -4,6 +4,8 @@ GUI for calibrating the wacom tablet to a screen or window. Can adjust the width
 
 Learning project for writing in C. Uses GTK4 library for the GUI and to list windows opened on the desktop. Runs cmd-line functions from xf86-input-wacom for getting details of the devices and setting the areas. Have only tested on Arch Linux running xfce4.
 
+![Alt text](https://github.com/avargas05/wacom-settings/raw/main/data/resources/screenshots/screenshot1.png "Main window")
+
 ## Dependencies
 - xf86-input-wacom
 - gtk4
