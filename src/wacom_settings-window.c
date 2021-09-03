@@ -332,19 +332,23 @@ apply_settings (WacomSettingsWindow *app)
   int                cmp;
 
   /* Get device id and dimensions. */
-  while(device) {
-    cmp = strcmp(device->type, equip);
-    if (!cmp) {
-      reset_device(device);
-      id = device->id;
-      tablet_w = device->w;
-      tablet_h = device->h;
-      tablet_x = device->x;
-      tablet_y = device->y;
-      break;
-    } else {
-      device = device->next;
+  if (equip != NULL && strcmp(equip, "")) {
+    while(device) {
+      cmp = strcmp(device->type, equip);
+      if (!cmp) {
+        reset_device(device);
+        id = device->id;
+        tablet_w = device->w;
+        tablet_h = device->h;
+        tablet_x = device->x;
+        tablet_y = device->y;
+        break;
+      } else {
+        device = device->next;
+      }
     }
+  } else {
+    return;
   }
 
   /* Get the screen area from the application window or monitor selected. */
