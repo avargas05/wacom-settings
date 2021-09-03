@@ -2,7 +2,7 @@
 
 GUI for calibrating the wacom tablet to a screen or window.
 
-Learning project for writing in C. Uses GTK4 library for the GUI and to list windows opened on the desktop. Runs cmd-line functions from xf86-input-wacom for getting details of the devices and setting the areas. Have only tested on Arch Linux running xfce4.
+Learning project for writing in C. Uses GTK4 library for the GUI and X11 libraries to list windows opened on the desktop. Runs cmd-line functions from xf86-input-wacom for getting details of the devices and setting the areas. Have only tested on Arch Linux running xfce4.
 
 ## Usage
 
@@ -19,6 +19,11 @@ All of your tablet devices will appear in the Devices drop-down menu. All the mo
 - pkgconf (base-devel)
 
 ## Installation
+ Install through the AUR:
+ 
+https://aur.archlinux.org/packages/wacom-settings-git/
+
+On other distros:
 ~~~bash
 git clone https://github.com/avargas05/wacom-settings.git
 cd wacom-settings
