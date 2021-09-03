@@ -1,0 +1,13 @@
+data/com.github.avargas05.wacom-settings.desktop.in
+data/com.github.avargas05.wacom-settings.appdata.xml.in
+data/com.github.avargas05.wacom-settings.gschema.xml
+src/wacom_settings-window.ui
+src/main.c
+src/wacom_settings-window.c
+src/wacom_settings-window.h
+src/datatypes.c
+src/datatypes.h
+src/parser.c
+src/parser.h
+src/windowmanager.c
+src/windowmanager.h

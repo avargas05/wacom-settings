@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=wacom-settings
+Exec=wacom-settings
+Icon=com.github.avargas05.wacom-settings
+Terminal=false
+Type=Application
+Categories=Utility;GTK;
+StartupNotify=true

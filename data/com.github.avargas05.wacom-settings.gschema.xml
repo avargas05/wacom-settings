@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist gettext-domain="wacom-settings">
+	<schema id="com.github.avargas05.wacom-settings" path="/com/github/avargas05/wacom-settings/">
+	</schema>
+</schemalist>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.github.avargas05.wacom-settings.desktop</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <name>Wacom Settings</name>
+  <summary>Calibrate wacom tablet devices</summary>
+  <project_license>GPL-3.0-or-later</project_license>
+  <description>
+    <p>GUI for calibrating the wacom tablet to a screen or window.</p>
+  </description>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://github.com/avargas05/wacom-settings/raw/main/data/resources/screenshots/screenshot1.png</image>
+      <caption>Main window</caption>
+    </screenshot>
+  </screenshots>
+  <url type="homepage">https://github.com/avargas05/wacom-settings</url>
+  <url type="bugtracker">https://github.com/avargas05/wacom-settings/issues</url>
+  <content_rating type="oars-1.1" />
+  <releases>
+    <release version="0.1.0" date="2021-09-02" />
+  </releases>
+  <developer_name>Andrison Vargas</developer_name>
+  <update_contact>avargas05.github@outlook.com</update_contact>
+</component>
