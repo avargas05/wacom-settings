@@ -43,11 +43,12 @@ static char
   unsigned long  nitems_return;
   unsigned long  bytes_after_return;
   unsigned long  tmp_size;
-  unsigned char *prop_return;
-  char          *ret;
+  unsigned char *prop_return = NULL;
+  char          *ret = NULL;
 
   /* Get property and check if successful */
   property = XInternAtom(display, prop_name, False);
+
   if (XGetWindowProperty( display,
                           window,
                           property,
@@ -94,7 +95,7 @@ static Window
 *get_client_list(Display       *disp,
                  unsigned long *size)
 {
-  Window *client_list;
+  Window *client_list = NULL;
 
   client_list = (Window *) get_property(disp,
                                         DefaultRootWindow(disp),
@@ -123,9 +124,9 @@ static char
 *get_window_title(Display *disp,
                   Window   win)
 {
-  char *title_utf8;
-  char *wm_name;
-  char *net_wm_name;
+  char *title_utf8 = NULL;
+  char *wm_name = NULL;
+  char *net_wm_name = NULL;
 
   wm_name = get_property(disp, win, XA_STRING, "WM_NAME", NULL);
   net_wm_name = get_property(disp,
@@ -136,18 +137,18 @@ static char
 
   if (net_wm_name) {
     title_utf8 = g_strdup(net_wm_name);
-  }
-  else {
+  } else {
     if (wm_name) {
       title_utf8 = g_locale_to_utf8(wm_name, -1, NULL, NULL, NULL);
-    }
-    else {
+    } else {
       title_utf8 = NULL;
     }
   }
 
   free(wm_name);
   free(net_wm_name);
+  wm_name = NULL;
+  net_wm_name = NULL;
 
   return title_utf8;
 }
@@ -165,8 +166,7 @@ static char
 
   if (is_utf8) {
     out = g_strdup(str);
-  }
-  else {
+  } else {
     if (! (out = g_locale_to_utf8(str, -1, NULL, NULL, NULL))) {
       printf("Cannot convert string from locale charset to UTF-8.\n");
       out = g_strdup(str);
@@ -177,14 +177,74 @@ static char
 }
 
 
+/* Retrieves the names of all the open windows. */
 void
 list_windows(ApplicationWindow *window)
 {
-  Display           *display;
-  Window            *client_list;
+  Display           *display = NULL;
+  Window            *client_list = NULL;
   unsigned long      client_list_size;
   long unsigned int  i;
-  char              *name;
+  char              *name = NULL;
+
+  if (! (display = XOpenDisplay(NULL))) {
+    exit(0);
+  }
+
+  if ((client_list = get_client_list(display, &client_list_size)) == NULL) {
+    exit(0);
+  }
+
+  /* Print the list */
+  for (i = 0; i < client_list_size / sizeof(Window); i++) {
+    char *title_utf8;
+    char *title_out;
+
+    /* Get window title */
+    title_utf8 = get_window_title(display, client_list[i]); /* UTF8 */
+    title_out = get_output_str(title_utf8, true);
+
+    /* Cut title max length to 30 characters */
+    if (strlen(title_out) > 30) {
+      title_out[30] = '\0';
+    }
+
+    if (asprintf(&name, "%s", title_out) == -1) {
+      exit(0);
+    }
+
+    window->name = name;
+
+    /* Avoids creating a new window that won't be used at end of loop */
+    if (i < client_list_size / sizeof(Window) - 1) {
+      window->next = new_window();
+    }
+
+    window = window->next;
+
+    free(title_out);
+    free(title_utf8);
+    title_out = NULL;
+    title_utf8 = NULL;
+    name = NULL;
+  }
+
+  free(client_list);
+  XCloseDisplay(display);
+  client_list = NULL;
+  display = NULL;
+}
+
+
+void
+get_window_dimensions(ApplicationWindow *window)
+{
+  Display           *display = NULL;
+  Window            *client_list = NULL;
+  unsigned long      client_list_size;
+  long unsigned int  i;
+  char              *name = NULL;
+  bool               window_found = false;
 
   if (! (display = XOpenDisplay(NULL))) {
     exit(0);
@@ -255,18 +315,14 @@ list_windows(ApplicationWindow *window)
       exit(0);
     }
 
-    window->name = name;
-    window->x = x;
-    window->y = y;
-    window->w = wwidth;
-    window->h = wheight;
-
-    /* Avoids creating a new window that won't be used at end of loop */
-    if (i < client_list_size / sizeof(Window) - 1) {
-      window->next = new_window();
+    if(!strcmp(window->name, name)) {
+      window_found = true;
+      window->x = x;
+      window->y = y;
+      window->w = wwidth;
+      window->h = wheight;
+      break;
     }
-
-    window = window->next;
 
     free(desktop);
     free(title_out);
@@ -275,6 +331,9 @@ list_windows(ApplicationWindow *window)
     title_out = NULL;
     title_utf8 = NULL;
     name = NULL;
+    if (window_found) {
+      break;
+    }
   }
 
   free(client_list);

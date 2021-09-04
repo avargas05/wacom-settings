@@ -369,6 +369,7 @@ apply_settings (WacomSettingsWindow *app)
     while(app_window) {
       cmp = strcmp(window->name, app_window);
       if (!cmp) {
+        get_window_dimensions(window);
         screen_area_w = window->w;
         screen_area_h = window->h;
         screen_area_x = window->x;

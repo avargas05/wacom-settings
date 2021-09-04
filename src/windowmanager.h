@@ -20,6 +20,7 @@
 
  #include "datatypes.h"
 
- void
- list_windows(ApplicationWindow *window);
+ void list_windows(ApplicationWindow *window);
+
+ void get_window_dimensions(ApplicationWindow *window);
 
