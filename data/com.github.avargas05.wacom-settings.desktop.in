@@ -1,5 +1,5 @@
 [Desktop Entry]
-Name=wacom-settings
+Name=Wacom Settings
 Exec=wacom-settings
 Icon=com.github.avargas05.wacom-settings
 Terminal=false
