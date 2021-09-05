@@ -436,8 +436,10 @@ apply_settings (WacomSettingsWindow *app)
     double area_ratio = (double) screen_area_w / screen_area_h;
 
     if (tablet_ratio > area_ratio) {
+      tablet_x += (tablet_w - tablet_h * area_ratio) / 2;
       tablet_w = tablet_h * area_ratio;
     } else {
+      tablet_y += (tablet_h - tablet_w / area_ratio) / 2;
       tablet_h = tablet_w / area_ratio;
     }
 
