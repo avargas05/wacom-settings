@@ -307,11 +307,11 @@ get_window_dimensions(ApplicationWindow *window)
                           &junkroot);
 
     /* Cut title max length to 30 characters */
-    if (strlen(title_out) > 30) {
-      title_out[30] = '\0';
+    if (strlen(title_utf8) > 30) {
+      title_utf8[30] = '\0';
     }
 
-    if (asprintf(&name, "%s", title_out) == -1) {
+    if (asprintf(&name, "%s", title_utf8) == -1) {
       exit(0);
     }
 

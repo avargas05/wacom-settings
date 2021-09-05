@@ -39,6 +39,7 @@ struct _WacomSettingsWindow
   GtkComboBoxText     *devices_combobox;
   GtkComboBoxText     *monitors_combobox;
   GtkComboBoxText     *windows_combobox;
+  GtkComboBoxText     *rotation_combobox;
   GtkCheckButton      *aspect_ratio_checkbox;
   GtkButton           *reset_all_button;
   GtkButton           *apply_button;
@@ -247,6 +248,48 @@ get_windows(GtkComboBoxText   *box,
 }
 
 
+/* Set options for rotation GtkComboBoxText */
+static void
+set_rotation_options(GtkComboBoxText *box)
+{
+  g_assert (GTK_IS_COMBO_BOX_TEXT(box));
+
+  gtk_combo_box_text_append_text(box, "");
+  gtk_combo_box_text_append_text(box, "None");
+  gtk_combo_box_text_append_text(box, "Clockwise");
+  gtk_combo_box_text_append_text(box, "Counter-Clockwise");
+  gtk_combo_box_text_append_text(box, "180\302\260");
+}
+
+static void
+set_rotation(char *option, char *id)
+{
+  char *rotation = NULL;
+  char *command = NULL;
+  FILE *shell = NULL;
+
+  if (!strcmp(option, "None")) {
+    rotation = "none";
+  } else if (!strcmp(option, "Clockwise")) {
+    rotation = "cw";
+  } else if (!strcmp(option, "Counter-Clockwise")) {
+    rotation = "ccw";
+  } else if (!strcmp(option, "180\302\260")) {
+    rotation = "half";
+  }
+
+  if (asprintf(&command, "xsetwacom --set %s Rotate %s", id, rotation) == -1) {
+    exit(0);
+  }
+
+  shell = popen(command, "r");
+  pclose(shell);
+  free(command);
+  shell = NULL;
+  command = NULL;
+}
+
+
 /* Call command-line xsetwacom --set id MapToOutput width*height+x+y */
 static void
 set_screen_area (char *id, int width, int height, int x_axis, int y_axis)
@@ -299,7 +342,7 @@ set_tablet_area (char *id, int width, int height, int x_axis, int y_axis)
     exit(0);
   }
 
-  shell = popen(command, "w");
+  shell = popen(command, "r");
   pclose(shell);
   free(command);
   shell = NULL;
@@ -316,6 +359,7 @@ apply_settings (WacomSettingsWindow *app)
   char              *equip = gtk_combo_box_text_get_active_text (app->devices_combobox);
   char              *app_window = gtk_combo_box_text_get_active_text (app->windows_combobox);
   char              *screen = gtk_combo_box_text_get_active_text (app->monitors_combobox);
+  char              *rotation = gtk_combo_box_text_get_active_text(app->rotation_combobox);
   gboolean           keep_ratio = gtk_check_button_get_active(app->aspect_ratio_checkbox);
   char              *id = NULL;
   int                tablet_w = 0;
@@ -336,6 +380,11 @@ apply_settings (WacomSettingsWindow *app)
     while(device) {
       cmp = strcmp(device->type, equip);
       if (!cmp) {
+        /* Set the rotation first. */
+        if (rotation != NULL && strcmp(rotation, "")) {
+          set_rotation(rotation, device->id);
+        }
+
         reset_device(device);
         id = device->id;
         tablet_w = device->w;
@@ -365,7 +414,7 @@ apply_settings (WacomSettingsWindow *app)
         monitor = monitor->next;
       }
     }
-  } else if (app_window!= NULL && strcmp(app_window, "")) {
+  } else if (app_window != NULL && strcmp(app_window, "")) {
     while(app_window) {
       cmp = strcmp(window->name, app_window);
       if (!cmp) {
@@ -469,6 +518,7 @@ wacom_settings_window_class_init (WacomSettingsWindowClass *klass)
   gtk_widget_class_bind_template_child (widget_class, WacomSettingsWindow, devices_combobox);
   gtk_widget_class_bind_template_child (widget_class, WacomSettingsWindow, monitors_combobox);
   gtk_widget_class_bind_template_child (widget_class, WacomSettingsWindow, windows_combobox);
+  gtk_widget_class_bind_template_child (widget_class, WacomSettingsWindow, rotation_combobox);
   gtk_widget_class_bind_template_child (widget_class, WacomSettingsWindow, aspect_ratio_checkbox);
   gtk_widget_class_bind_template_child (widget_class, WacomSettingsWindow, reset_all_button);
   gtk_widget_class_bind_template_child (widget_class, WacomSettingsWindow, apply_button);
@@ -495,6 +545,9 @@ wacom_settings_window_init (WacomSettingsWindow *self)
 
   /* Set items for active windows in GtkComboBoxText widget. */
   get_windows (self->windows_combobox, self->window);
+
+  /* Set rotation options. */
+  set_rotation_options (self->rotation_combobox);
 
   /* Reset devices. */
   g_signal_connect_swapped (self->reset_all_button, "clicked", G_CALLBACK (reset_devices), self);
