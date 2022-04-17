@@ -4,3 +4,6 @@ builddir/
 bin/
 build/
 compile_commands.json
+pkg/
+*.pkg.tar.xz
+
