@@ -3,8 +3,6 @@
   <requires lib="gtk4" version="4.0.0"/>
   <template class="WacomSettingsWindow" parent="GtkApplicationWindow">
     <property name="title" translatable="yes">Wacom Settings</property>
-    <property name="default-width">660</property>
-    <property name="default-height">360</property>
     <child>
       <object class="GtkGrid" id="grid">
         <property name="margin-start">12</property>
@@ -29,7 +27,7 @@
           </object>
         </child>
         <child>
-          <object class="GtkComboBoxText" id="devices_combobox">
+          <object class="GtkDropDown" id="devices_combobox">
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="valign">center</property>
@@ -53,7 +51,7 @@
           </object>
         </child>
         <child>
-          <object class="GtkComboBoxText" id="monitors_combobox">
+          <object class="GtkDropDown" id="monitors_combobox">
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="valign">center</property>
@@ -77,7 +75,7 @@
           </object>
         </child>
         <child>
-          <object class="GtkComboBoxText" id="windows_combobox">
+          <object class="GtkDropDown" id="windows_combobox">
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="valign">center</property>
@@ -101,8 +99,8 @@
           </object>
         </child>
         <child>
-          <object class="GtkComboBoxText" id="rotation_combobox">
-             <property name="visible">True</property>
+          <object class="GtkDropDown" id="rotation_combobox">
+            <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="valign">center</property>
             <layout>

@@ -1,6 +1,6 @@
 project('wacom-settings', 'c',
-          version: '0.1.0',
-    meson_version: '>= 0.50.0',
+          version: '0.2.0',
+    meson_version: '>= 1.1',
   default_options: [ 'warning_level=2',
                      'c_std=gnu17',
                    ],
@@ -17,7 +17,7 @@ configure_file(
   configuration: config_h,
 )
 add_project_arguments([
-  '-I' + meson.build_root(),
+  '-I' + meson.project_build_root(),
 ], language: 'c')
 
 

@@ -36,19 +36,19 @@ struct _WacomSettingsWindow
   GtkApplicationWindow  parent_instance;
 
   /* Template widgets */
-  GtkComboBoxText     *devices_combobox;
-  GtkComboBoxText     *monitors_combobox;
-  GtkComboBoxText     *windows_combobox;
-  GtkComboBoxText     *rotation_combobox;
-  GtkCheckButton      *aspect_ratio_checkbox;
-  GtkButton           *reset_all_button;
-  GtkButton           *apply_button;
-  GtkButton           *close_button;
+  GtkDropDown       *devices_combobox;
+  GtkDropDown       *monitors_combobox;
+  GtkDropDown       *windows_combobox;
+  GtkDropDown       *rotation_combobox;
+  GtkCheckButton    *aspect_ratio_checkbox;
+  GtkButton         *reset_all_button;
+  GtkButton         *apply_button;
+  GtkButton         *close_button;
 
-  /* Options in the comboboxtext */
-  TabletDevice         *device;
-  Monitor              *monitor;
-  ApplicationWindow    *window;
+  /* Options in the drop down */
+  TabletDevice      *device;
+  Monitor           *monitor;
+  ApplicationWindow *window;
 };
 
 G_DEFINE_TYPE (WacomSettingsWindow, wacom_settings_window, GTK_TYPE_APPLICATION_WINDOW)
@@ -58,12 +58,12 @@ G_DEFINE_TYPE (WacomSettingsWindow, wacom_settings_window, GTK_TYPE_APPLICATION_
 static void
 reset_device (TabletDevice *device)
 {
-  FILE         *shell = NULL;
-  char         *command = NULL;
-  FILE         *area_shell = NULL;
-  char          area[30];
-  char          s[] = " ";
-  char         *token = NULL;
+  FILE *shell = NULL;
+  char *command = NULL;
+  FILE *area_shell = NULL;
+  char area[30];
+  char s[] = " ";
+  char *token = NULL;
 
   if (asprintf(&command, "xsetwacom --set %s ResetArea", device->id) == -1) {
     exit(0);
@@ -102,16 +102,17 @@ reset_device (TabletDevice *device)
 
 
 /* Call cmd xsetwacom --list devices.
- * Parse each line for name, id, type and add to GtkComboBoxText widget.
+ * Parse each line for name, id, type and add to GtkDropDown widget.
  * Use id to call 'xsetwacom --get id Area'
  * Parse those lines for dimensions of each type.
  */
 static void
-get_devices(GtkComboBoxText *devices_combobox,
-            TabletDevice    *device)
+get_devices(GtkDropDown  *devices_combobox,
+            TabletDevice *device)
 {
-  g_assert (GTK_IS_COMBO_BOX_TEXT(devices_combobox));
+  g_assert (GTK_IS_DROP_DOWN(devices_combobox));
 
+  GtkStringList *device_names = gtk_string_list_new(NULL);
   FILE *shell = NULL;
   FILE *area_shell = NULL;
   char  buff[800];
@@ -132,7 +133,7 @@ get_devices(GtkComboBoxText *devices_combobox,
     device->id = parse_id(buff);
     device->type = parse_type(buff);
 
-    gtk_combo_box_text_append_text (devices_combobox, device->type);
+    gtk_string_list_append (device_names, device->type);
 
     if (asprintf(&command, "xsetwacom --get %s Area", device->id) == -1) {
       exit(0);
@@ -150,6 +151,7 @@ get_devices(GtkComboBoxText *devices_combobox,
       device->h = atoi(token);
     }
 
+    gtk_drop_down_set_model(devices_combobox, (GListModel*) device_names);
     pclose(area_shell);
     free(command);
     command = NULL;
@@ -159,18 +161,20 @@ get_devices(GtkComboBoxText *devices_combobox,
   shell = NULL;
   area_shell = NULL;
   token = NULL;
+  gtk_widget_set_size_request((GtkWidget*) devices_combobox, 250, -1);
 }
 
 
 /* Get gdk display manager and names and dimensions of all displays.
- * Add each monitor name to the GtkComboBoxText widget.
+ * Add each monitor name to the GtkDropDown widget.
  */
 static void
-get_monitors(GtkComboBoxText *monitor_combobox,
-             Monitor         *monitors)
+get_monitors(GtkDropDown *monitor_combobox,
+             Monitor     *monitors)
 {
-  g_assert (GTK_IS_COMBO_BOX_TEXT(monitor_combobox));
+  g_assert (GTK_IS_DROP_DOWN(monitor_combobox));
 
+  GtkStringList     *monitor_options = gtk_string_list_new(NULL);
   GdkDisplayManager *manager = NULL;
   GdkMonitor        *monitor = NULL;
   GListModel        *names = NULL;
@@ -186,14 +190,15 @@ get_monitors(GtkComboBoxText *monitor_combobox,
   displays = gdk_display_manager_list_displays(manager);
 
   /* Add empty option. */
-  gtk_combo_box_text_append_text (monitor_combobox, "");
+  char *str = "";
+  gtk_string_list_append (monitor_options, str);
 
   /* Iterate through displays. */
   for (l = displays; l != NULL; l = l->next) {
     display = l->data;
 
     /* Iterate through monitors in displays,
-     * and add connector names of monitors to GtkComboBoxText widget.
+     * and add connector names of monitors to GtkDropDown widget.
      */
     names = gdk_display_get_monitors (display);
     monitor = g_list_model_get_item (names, position);
@@ -206,7 +211,7 @@ get_monitors(GtkComboBoxText *monitor_combobox,
 
       monitors->connector = gdk_monitor_get_connector (monitor);
 
-      gtk_combo_box_text_append_text (monitor_combobox, monitors->connector);
+      gtk_string_list_append (monitor_options, monitors->connector);
       gdk_monitor_get_geometry (monitor, &rectangle);
       monitors->w = rectangle.width;
       monitors->h = rectangle.height;
@@ -218,6 +223,7 @@ get_monitors(GtkComboBoxText *monitor_combobox,
     }
   }
 
+  gtk_drop_down_set_model(monitor_combobox, (GListModel*) monitor_options);
   manager = NULL;
   monitor = NULL;
   names = NULL;
@@ -227,42 +233,49 @@ get_monitors(GtkComboBoxText *monitor_combobox,
 
 
 /* Call list_windows and add each window name to the
- * GtkComboBoxText widget.
+ * GtkDropDown widget.
  */
 static void
-get_windows(GtkComboBoxText   *box,
+get_windows(GtkDropDown       *box,
             ApplicationWindow *windows)
 {
-  g_assert (GTK_IS_COMBO_BOX_TEXT(box));
+  g_assert (GTK_IS_DROP_DOWN(box));
 
   ApplicationWindow *window = NULL;
+  GtkStringList     *window_names = gtk_string_list_new(NULL);
 
-  gtk_combo_box_text_append_text (box, "");
+  gtk_string_list_append (window_names, "");
   list_windows(windows);
 
   for (window = windows; window != NULL; window = window->next) {
-    gtk_combo_box_text_append_text (box, window->name);
+    gtk_string_list_append (window_names, window->name);
   }
 
+  gtk_drop_down_set_model(box, (GListModel*) window_names);
   window = NULL;
 }
 
 
-/* Set options for rotation GtkComboBoxText */
+/* Set options for rotation GtkDropDown */
 static void
-set_rotation_options(GtkComboBoxText *box)
+set_rotation_options(GtkDropDown *box)
 {
-  g_assert (GTK_IS_COMBO_BOX_TEXT(box));
+  g_assert (GTK_IS_DROP_DOWN(box));
 
-  gtk_combo_box_text_append_text(box, "");
-  gtk_combo_box_text_append_text(box, "None");
-  gtk_combo_box_text_append_text(box, "Clockwise");
-  gtk_combo_box_text_append_text(box, "Counter-Clockwise");
-  gtk_combo_box_text_append_text(box, "180\302\260");
+  GtkStringList *options = gtk_string_list_new(NULL);
+
+  gtk_string_list_append(options, "");
+  gtk_string_list_append(options, "None");
+  gtk_string_list_append(options, "Clockwise");
+  gtk_string_list_append(options, "Counter-Clockwise");
+  gtk_string_list_append(options, "180\302\260");
+
+  gtk_drop_down_set_model(box, (GListModel*) options);
 }
 
 static void
-set_rotation(char *option, char *id)
+set_rotation(const char *option,
+             char       *id)
 {
   char *rotation = NULL;
   char *command = NULL;
@@ -292,7 +305,11 @@ set_rotation(char *option, char *id)
 
 /* Call command-line xsetwacom --set id MapToOutput width*height+x+y */
 static void
-set_screen_area (char *id, int width, int height, int x_axis, int y_axis)
+set_screen_area (char *id,
+                 int   width,
+                 int   height,
+                 int   x_axis,
+                 int   y_axis)
 {
   FILE *shell = NULL;
   char *command = NULL;
@@ -322,7 +339,11 @@ set_screen_area (char *id, int width, int height, int x_axis, int y_axis)
  * xsetwacom --set id Area x1 y1 x2 y2
  */
 static void
-set_tablet_area (char *id, int width, int height, int x_axis, int y_axis)
+set_tablet_area (char *id,
+                 int   width,
+                 int   height,
+                 int   x_axis,
+                 int   y_axis)
 {
   FILE *shell = NULL;
   char *command = NULL;
@@ -350,17 +371,12 @@ set_tablet_area (char *id, int width, int height, int x_axis, int y_axis)
 }
 
 
-/* Gets values from GtkComboBoxText widgets and applies changes
+/* Gets values from GtkDropDown widgets and applies changes
  * to screen and tablet areas as selected.
  */
 static void
 apply_settings (WacomSettingsWindow *app)
 {
-  char              *equip = gtk_combo_box_text_get_active_text (app->devices_combobox);
-  char              *app_window = gtk_combo_box_text_get_active_text (app->windows_combobox);
-  char              *screen = gtk_combo_box_text_get_active_text (app->monitors_combobox);
-  char              *rotation = gtk_combo_box_text_get_active_text(app->rotation_combobox);
-  gboolean           keep_ratio = gtk_check_button_get_active(app->aspect_ratio_checkbox);
   char              *id = NULL;
   int                tablet_w = 0;
   int                tablet_h = 0;
@@ -374,6 +390,12 @@ apply_settings (WacomSettingsWindow *app)
   Monitor           *monitor = app->monitor;
   ApplicationWindow *window = app->window;
   int                cmp;
+
+  const char *equip = gtk_string_object_get_string((GtkStringObject*) gtk_drop_down_get_selected_item (app->devices_combobox));
+  const char *app_window = gtk_string_object_get_string((GtkStringObject*) gtk_drop_down_get_selected_item (app->windows_combobox));
+  const char *screen = gtk_string_object_get_string((GtkStringObject*) gtk_drop_down_get_selected_item (app->monitors_combobox));
+  const char *rotation = gtk_string_object_get_string((GtkStringObject*) gtk_drop_down_get_selected_item (app->rotation_combobox));
+  gboolean keep_ratio = gtk_check_button_get_active (app->aspect_ratio_checkbox);
 
   /* Get device id and dimensions. */
   if (equip != NULL && strcmp(equip, "")) {
@@ -482,6 +504,15 @@ reset_devices (WacomSettingsWindow *app)
     free(command);
     command = NULL;
 
+    if (asprintf(&command, "xsetwacom --set %s Rotate none", device->id) == -1) {
+      exit(0);
+    }
+
+    shell = popen(command, "r");
+    pclose(shell);
+    free(command);
+    command = NULL;
+
     if (asprintf(&command, "xsetwacom --get %s Area", device->id) == -1) {
       exit(0);
     }
@@ -525,7 +556,6 @@ wacom_settings_window_class_init (WacomSettingsWindowClass *klass)
   gtk_widget_class_bind_template_child (widget_class, WacomSettingsWindow, reset_all_button);
   gtk_widget_class_bind_template_child (widget_class, WacomSettingsWindow, apply_button);
   gtk_widget_class_bind_template_child (widget_class, WacomSettingsWindow, close_button);
-
 }
 
 
@@ -539,13 +569,13 @@ wacom_settings_window_init (WacomSettingsWindow *self)
   self->monitor = new_monitor();
   self->window = new_window();
 
-  /* Set items for the tablet's devices in GtkComboBoxText widget. */
+  /* Set items for the tablet's devices in GtkDropDown widget. */
   get_devices (self->devices_combobox, self->device);
 
-  /* Set items for monitors in GtkComboBoxText widget. */
+  /* Set items for monitors in GtkDropDown widget. */
   get_monitors (self->monitors_combobox, self->monitor);
 
-  /* Set items for active windows in GtkComboBoxText widget. */
+  /* Set items for active windows in GtkDropDown widget. */
   get_windows (self->windows_combobox, self->window);
 
   /* Set rotation options. */
